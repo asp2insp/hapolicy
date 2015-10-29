@@ -1,0 +1,4 @@
+[package]
+name = "HAPolicy"
+version = "0.1.0"
+authors = ["Josiah Gaskin <josiahgaskin@gmail.com>"]
