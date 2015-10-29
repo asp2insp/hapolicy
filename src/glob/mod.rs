@@ -125,6 +125,35 @@ mod tests {
         assert_eq!(false, matches_segments(&["*", "a"], &["ab", "a", "de"]));
         assert_eq!(true, matches_segments(&["*", "a"], &["abc", "a"]));
         assert_eq!(true, matches_segments(&["*", "a"], &["*", "a"]));
+
+        assert_eq!(true, matches_segments(&["b", "*", "a"], &["b", "*", "a"]));
+        assert_eq!(true, matches_segments(&["b", "*", "a"], &["b", "asdf", "a"]));
+        assert_eq!(true, matches_segments(&["b", "*", "a"], &["b", "a", "a"]));
+        assert_eq!(false, matches_segments(&["b", "*", "a"], &["foo", "a", "a"]));
+        assert_eq!(false, matches_segments(&["b", "*", "a"], &["b", "a", "foo"]));
+
+        assert_eq!(true, matches_segments(&["b", "*", "a", "*"], &["b", "foo", "a", "bar"]));
+        assert_eq!(true, matches_segments(&["b", "*", "a", "*"], &["b", "a", "a", "a"]));
+    }
+
+    #[test]
+    fn matches_segments_works_with_partial_dual_wildcard_pattern() {
+        assert_eq!(true, matches_segments(&["a", "**"], &["a", "foo"]));
+        assert_eq!(true, matches_segments(&["a", "**"], &["a", "foo", "bar"]));
+        assert_eq!(true, matches_segments(&["a", "**"], &["a", ""]));
+        assert_eq!(false, matches_segments(&["a", "**"], &["b", "foo"]));
+        assert_eq!(true, matches_segments(&["a", "**"], &["a"]));
+
+        assert_eq!(true, matches_segments(&["**", "a"], &["a"]));
+        assert_eq!(false, matches_segments(&["**", "a"], &["ab", "a", "de"]));
+        assert_eq!(true, matches_segments(&["**", "a"], &["abc", "a"]));
+        assert_eq!(true, matches_segments(&["**", "a"], &["*", "a"]));
+        assert_eq!(true, matches_segments(&["**", "a"], &["*", "a"]));
+        assert_eq!(true, matches_segments(&["**", "a"], &["def", "jkl", "a"]));
+
+        assert_eq!(true, matches_segments(&["b", "**", "a"], &["b", "jkl", "a"]));
+        assert_eq!(false, matches_segments(&["b", "**", "a"], &["b", "jkl", "foo"]));
+        assert_eq!(false, matches_segments(&["b", "**", "a"], &["b", "jkl", "", "foo"]));
     }
 
     #[test]
@@ -138,5 +167,15 @@ mod tests {
 
         assert_eq!(true, matches_glob("a*a*", "aba"));
         assert_eq!(true, matches_glob("a*a*", "abaf"));
+    }
+
+    #[test]
+    fn matches_segments_works_with_multiple_dual_wildcards() {
+        assert_eq!(true, matches_segments(&["a", "**", "**"], &["a", "foo"]));
+        assert_eq!(true, matches_segments(&["a", "**", "**"], &["a", "bar", "foo"]));
+        assert_eq!(true, matches_segments(&["**", "**", "b"], &["a", "bar", "blah", "b"]));
+
+        assert_eq!(false, matches_segments(&["a", "**", "b"], &["a", "bar", "blah", "foo"]));
+        assert_eq!(true, matches_segments(&["a", "**", "b"], &["a", "bar", "blah", "foo", "b"]));
     }
 }
