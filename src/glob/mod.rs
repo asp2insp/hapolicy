@@ -12,8 +12,8 @@ fn matches_segments(pattern: &[&str], candidate: &[&str]) -> bool {
         candidate.len() == 0
     } else if candidate.len() == 0 {
         // If the candidate ends before the pattern, reject it. The candidate
-        // must not be more general than the pattern
-        false
+        // must not be more general than the pattern. Only exception is ending on "**".
+        pattern.len() == 1 && pattern[0] == "**"
     } else if pattern[0] == "**" {
         // In this case the path can span multiple directories. For simplicity,
         // it's not allowed to have a partial match here, so the pattern must be
@@ -47,6 +47,17 @@ fn matches_glob(pattern: &str, candidate: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::matches_glob;
+    use super::matches_segments;
+
+    #[test]
+    fn matches_segments_works_on_empty_slices() {
+        assert_eq!(true, matches_segments(&[], &[]));
+        assert_eq!(true, matches_segments(&[""], &[""]));
+        assert_eq!(false, matches_segments(&["a"], &[""]));
+        assert_eq!(false, matches_segments(&["a"], &[]));
+        assert_eq!(false, matches_segments(&[""], &["a"]));
+        assert_eq!(false, matches_segments(&[], &["a"]));
+    }
 
     #[test]
     fn matches_glob_works_on_empty_strings() {
@@ -64,6 +75,30 @@ mod tests {
     }
 
     #[test]
+    fn matches_segments_works_with_single_wildcard_pattern() {
+        assert_eq!(true, matches_segments(&["*"], &["*"]));
+        assert_eq!(true, matches_segments(&["*"], &["a"]));
+        assert_eq!(true, matches_segments(&["*"], &["abcde"]));
+        assert_eq!(true, matches_segments(&["*"], &["abc*"]));
+        assert_eq!(true, matches_segments(&["*"], &["*abc"]));
+
+        // Shouldn't cross segment boundaries
+        assert_eq!(false, matches_segments(&["*"], &["a", "b"]));
+    }
+
+    #[test]
+    fn matches_segments_works_with_dual_wildcard_pattern() {
+        assert_eq!(true, matches_segments(&["**"], &["*"]));
+        assert_eq!(true, matches_segments(&["**"], &["a"]));
+        assert_eq!(true, matches_segments(&["**"], &["ab", "cd", "de"]));
+        assert_eq!(true, matches_segments(&["**"], &["abc", "*"]));
+        assert_eq!(true, matches_segments(&["**"], &["*", "abc"]));
+
+        assert_eq!(false, matches_segments(&["**b"], &["abc"]));
+        assert_eq!(false, matches_segments(&["b**"], &["abc"]));
+    }
+
+    #[test]
     fn matches_glob_works_with_partial_wildcard_pattern() {
         assert_eq!(true, matches_glob("*a", "cba"));
         assert_eq!(true, matches_glob("*a", "a"));
@@ -77,6 +112,19 @@ mod tests {
         assert_eq!(true, matches_glob("a*b", "afghb"));
         assert_eq!(true, matches_glob("a*b", "ab"));
         assert_eq!(false, matches_glob("a*b", "afghbf"));
+    }
+
+    #[test]
+    fn matches_segments_works_with_partial_single_wildcard_pattern() {
+        assert_eq!(true, matches_segments(&["a", "*"], &["a", "foo"]));
+        assert_eq!(true, matches_segments(&["a", "*"], &["a", ""]));
+        assert_eq!(false, matches_segments(&["a", "*"], &["b", "foo"]));
+        assert_eq!(false, matches_segments(&["a", "*"], &["a"]));
+
+        assert_eq!(false, matches_segments(&["*", "a"], &["a"]));
+        assert_eq!(false, matches_segments(&["*", "a"], &["ab", "a", "de"]));
+        assert_eq!(true, matches_segments(&["*", "a"], &["abc", "a"]));
+        assert_eq!(true, matches_segments(&["*", "a"], &["*", "a"]));
     }
 
     #[test]
