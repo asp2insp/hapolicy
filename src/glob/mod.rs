@@ -86,6 +86,7 @@ mod tests {
         assert_eq!(true, matches_glob("*a*", "abc"));
         assert_eq!(true, matches_glob("*a*", "bac"));
         assert_eq!(false, matches_glob("*a*", "b"));
+        assert_eq!(false, matches_glob("*a*", ""));
 
         assert_eq!(true, matches_glob("a*a*", "aba"));
         assert_eq!(true, matches_glob("a*a*", "abaf"));
