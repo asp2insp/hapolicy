@@ -43,7 +43,7 @@
 // 	Hierarchy   []string
 // }
 
-mod glob;
+pub mod glob;
 
 #[test]
 fn it_works() {

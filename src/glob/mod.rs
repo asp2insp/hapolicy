@@ -1,8 +1,45 @@
 use std::vec::Vec;
 
+/// Returns true iff the given pattern will accept the candidate.
+/// The pattern and the candidate can be multi-segment paths, separated
+/// by the given separator string. In this case, a "*" segment in the pattern
+/// will match any sequence of characters in the corresponding segment of the
+/// candidate, and a "**" segment in the pattern will match any set of segments.
+/// **Using an empty seperator will result in no string splitting**
+/// in the candidate.
+/// # Examples
+/// ## Simple matching
+/// ```
+/// use hapolicy::glob::matches;
+/// assert_eq!(false, matches("a", "b", ""));
+/// assert_eq!(false, matches("a/b", "b/a", "/"));
+/// assert_eq!(true, matches("a/b", "a/b", "/"));
+/// ```
+/// ## Matching with globs
+/// ```
+/// use hapolicy::glob::matches;
+/// assert_eq!(true, matches("*", "b", ""));
+/// assert_eq!(true, matches("a/*", "a/foo", "/"));
+/// assert_eq!(true, matches("*/*", "foo/bar", "/"));
+/// assert_eq!(false, matches("*/*", "foo/bar/baz", "/"));
+/// ```
+/// ## Matching with multi-glob
+/// ```
+/// use hapolicy::glob::matches;
+/// assert_eq!(true, matches("**", "b", ""));
+/// assert_eq!(true, matches("a/**", "a/foo/bar", "/"));
+/// assert_eq!(true, matches("a/**/*.jpg", "a/foo/bar/baz.jpg", "/"));
+/// assert_eq!(false, matches("a/**/*.jpg", "a/foo/bar/baz", "/"));
+/// ```
 pub fn matches(pattern: &str, candidate: &str, sep: &str) -> bool {
-    let pattern: Vec<&str> = pattern.split(sep).collect();
-    let candidate: Vec<&str> = candidate.split(sep).collect();
+    let pattern: Vec<&str> = match sep {
+        "" => vec!(pattern),
+        _ => pattern.split(sep).collect(),
+    };
+    let candidate: Vec<&str> = match sep {
+        "" => vec!(candidate),
+        _ => candidate.split(sep).collect(),
+    };
     matches_segments(&pattern[..], &candidate[..])
 }
 
@@ -49,6 +86,14 @@ mod tests {
     use super::matches_glob;
     use super::matches_segments;
     use super::matches;
+
+    #[test]
+    fn matches_use_cases() {
+        assert_eq!(true, matches("**", "b", ""));
+        assert_eq!(true, matches("a/**", "a/foo/bar", "/"));
+        assert_eq!(true, matches("foo/**/*.jpg", "foo/bar/baz.jpg", "/"));
+        assert_eq!(false, matches("foo/**/*.jpg", "foo/bar/baz", "/"));
+    }
 
     #[test]
     fn matches_works_on_empty_strings() {
