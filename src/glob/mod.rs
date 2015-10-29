@@ -1,8 +1,8 @@
 use std::vec::Vec;
 
-pub fn matches(pattern: &str, candidate: &str) -> bool {
-    let pattern: Vec<&str> = pattern.split("/").collect();
-    let candidate: Vec<&str> = candidate.split("/").collect();
+pub fn matches(pattern: &str, candidate: &str, sep: &str) -> bool {
+    let pattern: Vec<&str> = pattern.split(sep).collect();
+    let candidate: Vec<&str> = candidate.split(sep).collect();
     matches_segments(&pattern[..], &candidate[..])
 }
 
@@ -48,6 +48,45 @@ fn matches_glob(pattern: &str, candidate: &str) -> bool {
 mod tests {
     use super::matches_glob;
     use super::matches_segments;
+    use super::matches;
+
+    #[test]
+    fn matches_works_on_empty_strings() {
+        assert_eq!(true, matches("", "", ""));
+        assert_eq!(false, matches("a", "", ""));
+        assert_eq!(false, matches("", "a", ""));
+
+        assert_eq!(true, matches("", "", ":"));
+        assert_eq!(false, matches("a", "", ":"));
+        assert_eq!(false, matches("", "a", ":"));
+    }
+
+    #[test]
+    fn matches_works_with_single_wildcards() {
+        assert_eq!(true, matches("a/*/c", "a/b/c", "/"));
+        assert_eq!(true, matches("a/*/c", "a/booooo/c", "/"));
+        assert_eq!(true, matches("a/*/c", "a/*/c", "/"));
+
+        assert_eq!(true, matches("a/*/c/*", "a/*/c/", "/"));
+        assert_eq!(true, matches("a/*/c/*", "a/*/c/foo", "/"));
+        assert_eq!(false, matches("a/*/c/*", "a/*/c", "/"));
+    }
+
+    #[test]
+    fn matches_works_with_dual_wildcards() {
+        assert_eq!(true, matches("a/**/c", "a/c", "/"));
+        assert_eq!(true, matches("a/**/c", "a/b/c", "/"));
+        assert_eq!(true, matches("a/**/c", "a/b/d/c", "/"));
+
+        assert_eq!(true, matches("a/**/c/*", "a/b/c/", "/"));
+        assert_eq!(true, matches("a/**/c/*", "a/b/df/c/foo", "/"));
+        assert_eq!(false, matches("a/**/c/*", "a/b/d/c", "/"));
+
+        assert_eq!(true, matches("a/b/c/**", "a/b/c", "/"));
+        assert_eq!(true, matches("a/b/c/**", "a/b/c/", "/"));
+        assert_eq!(true, matches("a/b/c/**", "a/b/c/d", "/"));
+        assert_eq!(true, matches("a/b/c/**", "a/b/c/d/e", "/"));
+    }
 
     #[test]
     fn matches_segments_works_on_empty_slices() {
